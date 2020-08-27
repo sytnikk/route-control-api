@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import {BadRequestException, Injectable} from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -13,5 +13,13 @@ export class TransportTypesService {
 
     async findAll(): Promise<TransportType[]> {
         return this.transportTypeRepository.find();
+    }
+
+    async findById(id: number): Promise<TransportType> {
+        const transportType = this.transportTypeRepository.findOne(id);
+        if (!transportType) {
+            throw new BadRequestException('Transport type not found');
+        }
+        return transportType;
     }
 }

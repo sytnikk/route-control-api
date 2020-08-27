@@ -11,5 +11,6 @@ import { TransportTypesService } from './transport-types.service';
     ],
     controllers: [TransportTypesController],
     providers: [TransportTypesService],
+    exports: [TransportTypesService, TypeOrmModule],
 })
 export class TransportTypesModule {}
