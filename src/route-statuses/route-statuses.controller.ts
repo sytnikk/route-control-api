@@ -1,4 +1,14 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 
-@Controller('routes-statuses')
-export class RouteStatusesController {}
+import { RouteStatus } from './route-status.entity';
+import { RouteStatusesService } from './route-statuses.service';
+
+@Controller('route-statuses')
+export class RouteStatusesController {
+    constructor(private routeStatusesService: RouteStatusesService) {}
+
+    @Get()
+    index(): Promise<RouteStatus[]> {
+        return this.routeStatusesService.findAll();
+    }
+}
