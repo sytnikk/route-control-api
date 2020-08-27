@@ -2,6 +2,7 @@ import {Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn} from 'type
 
 import { TransportType } from '../transport-types/transport-type.entity';
 import { RouteStatus } from '../route-statuses/route-status.entity';
+import { Car } from '../cars/car.entity';
 
 @Entity()
 export class Route {
@@ -9,22 +10,29 @@ export class Route {
     id: number;
 
     @Column()
-    licensePlate: string;
+    startCity: string;
 
     @Column()
-    model: string;
+    endCity: string;
+
+    @Column()
+    distanceBetweenCities: number;
+
+    @Column({ type: 'datetime' })
+    sendingDate: Date;
 
     @OneToOne(type => TransportType)
     @JoinColumn()
     transportType: TransportType;
 
-    @Column({ type: 'datetime' })
-    purchaseDate: Date;
-
-    @Column()
-    mileage: number;
+    @OneToOne(type => Car)
+    @JoinColumn()
+    car: Car;
 
     @OneToOne(type => RouteStatus)
     @JoinColumn()
     status: RouteStatus;
+
+    @Column({ type: 'datetime' })
+    deliveryDate: Date;
 }
