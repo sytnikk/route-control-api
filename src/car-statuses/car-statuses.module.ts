@@ -11,5 +11,6 @@ import { CarStatusesService } from './car-statuses.service';
     ],
     controllers: [CarStatusesController],
     providers: [CarStatusesService],
+    exports: [CarStatusesService, TypeOrmModule]
 })
 export class CarStatusesModule {}
