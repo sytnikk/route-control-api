@@ -10,6 +10,7 @@ import { RouteStatusesService } from './route-statuses.service';
     TypeOrmModule.forFeature([RouteStatus]),
   ],
   controllers: [RouteStatusesController],
-  providers: [RouteStatusesService]
+  providers: [RouteStatusesService],
+  exports: [RouteStatusesService, TypeOrmModule]
 })
 export class RouteStatusesModule {}
