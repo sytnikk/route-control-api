@@ -3,6 +3,7 @@ import {Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn} from 'type
 import { TransportType } from '../transport-types/transport-type.entity';
 import { RouteStatus } from '../route-statuses/route-status.entity';
 import { Car } from '../cars/car.entity';
+import { RouteDto } from './route.dto';
 
 @Entity()
 export class Route {
@@ -10,10 +11,10 @@ export class Route {
     id: number;
 
     @Column()
-    startCity: string;
+    cityStart: string;
 
     @Column()
-    endCity: string;
+    cityEnd: string;
 
     @Column()
     distanceBetweenCities: number;
@@ -22,17 +23,30 @@ export class Route {
     sendingDate: Date;
 
     @OneToOne(type => TransportType)
-    @JoinColumn()
+    @JoinColumn({ name: 'transportTypeId' })
     transportType: TransportType;
 
+    @Column()
+    transportTypeId: number;
+
     @OneToOne(type => Car)
-    @JoinColumn()
+    @JoinColumn({ name: 'carId' })
     car: Car;
 
-    @OneToOne(type => RouteStatus)
-    @JoinColumn()
-    status: RouteStatus;
+    @Column()
+    carId: number|null;
+
+    @OneToOne(type => RouteStatus, { cascade: [ "insert" ] })
+    @JoinColumn({ name: 'routeStatusId' })
+    routeStatus: RouteStatus;
+
+    @Column()
+    routeStatusId: number;
 
     @Column({ type: 'datetime' })
     deliveryDate: Date;
+
+    constructor(partial: Partial<RouteDto>) {
+        Object.assign(this, partial);
+    }
 }
