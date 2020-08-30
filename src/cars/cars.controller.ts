@@ -14,6 +14,11 @@ export class CarsController {
         return this.carsService.findAll();
     }
 
+    @Get(':id')
+    findById(@Param('id', ParseIntPipe) id,): Promise<Car> {
+        return this.carsService.findById(id);
+    }
+
     @Post()
     create(@Body() carDto: CarDto): Promise<Car> {
         return this.carsService.create(new Car(carDto));

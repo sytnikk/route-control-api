@@ -1,8 +1,9 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from 'typeorm';
+import {Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn, OneToMany} from 'typeorm';
 
 import { TransportType } from '../transport-types/transport-type.entity';
 import { CarStatus } from '../car-statuses/car-status.entity';
 import { CarDto } from './car.dto';
+import {Route} from "../routes/route.entity";
 
 @Entity()
 export class Car {
@@ -27,6 +28,9 @@ export class Car {
 
     @Column()
     mileage: number;
+
+    @OneToMany(type => Route, route => route.car)
+    routes: Route[];
 
     @OneToOne(type => CarStatus)
     @JoinColumn({ name: 'carStatusId' })
