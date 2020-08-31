@@ -15,12 +15,12 @@ import { RouteStatusesModule } from './route-statuses/route-statuses.module';
       TransportTypesModule,
       RouteStatusesModule,
       TypeOrmModule.forRoot({
-        type: 'mysql',
-        host: 'localhost',
-        port: 3306,
-        username: 'test',
-        password: 'test',
-        database: 'route-control',
+        type: process.env.DATA_BASE_TYPE as 'mysql'|'postgres',
+        host: process.env.DATA_BASE_HOST,
+        port: Number(process.env.DATA_BASE_PORT),
+        username: process.env.DATA_BASE_USERNAME,
+        password: process.env.DATA_BASE_PASSWORD,
+        database: process.env.DATA_BASE,
         entities: [
           __dirname + '/**/*.entity{.ts,.js}',
         ],
