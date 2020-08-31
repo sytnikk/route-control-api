@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsDateString, IsString, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber, Validate } from 'class-validator';
+import { IsDateConstraint } from '../validators';
 
 export class CarDto {
     @IsNotEmpty()
@@ -14,11 +15,10 @@ export class CarDto {
     transportTypeId: number;
 
     @IsNotEmpty()
-    @IsDateString()
+    @Validate(IsDateConstraint)
     purchaseDate: string;
 
     @IsNotEmpty()
-    @IsNumber()
     mileage: number;
 
     @IsNotEmpty()

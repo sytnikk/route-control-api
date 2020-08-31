@@ -1,4 +1,12 @@
-import { IsNotEmpty, IsDateString, IsString, IsNumber, IsOptional } from 'class-validator';
+import {
+    IsNotEmpty,
+    IsString,
+    IsNumber,
+    Validate,
+    IsNumberString
+} from 'class-validator';
+
+import {IsDateConstraint, IsGreaterThanConstraint, IsLowerThanConstraint} from '../validators';
 
 export class RouteDto {
     @IsNotEmpty()
@@ -14,7 +22,12 @@ export class RouteDto {
     distanceBetweenCities: number;
 
     @IsNotEmpty()
-    @IsDateString()
+    @IsNumber()
+    revenue: number;
+
+    @IsNotEmpty()
+    @Validate(IsLowerThanConstraint, ['deliveryDate'])
+    @Validate(IsDateConstraint)
     sendingDate: string;
 
     @IsNotEmpty()
@@ -29,6 +42,7 @@ export class RouteDto {
     routeStatusId: number;
 
     @IsNotEmpty()
-    @IsDateString()
+    @Validate(IsGreaterThanConstraint, ['sendingDate'])
+    @Validate(IsDateConstraint)
     deliveryDate: string;
 }

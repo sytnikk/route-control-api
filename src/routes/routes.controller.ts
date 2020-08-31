@@ -28,11 +28,7 @@ export class RoutesController {
     }
 
     @Delete(':id')
-    async delete(
-        @Param('id', ParseIntPipe) id,
-        @Res() res: Response
-    ): Promise<void> {
-        await this.routeService.delete(id);
-        res.status(HttpStatus.NO_CONTENT).send();
+    async delete(@Param('id', ParseIntPipe) id): Promise<Route> {
+        return this.routeService.delete(id);
     }
 }

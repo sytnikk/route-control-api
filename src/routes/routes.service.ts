@@ -1,5 +1,5 @@
 import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/common';
-import { Repository, getManager } from 'typeorm';
+import { Repository, getManager, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { Route } from './route.entity';
@@ -9,6 +9,7 @@ import { CarsService } from '../cars/cars.service';
 import { TransportTypesService } from '../transport-types/transport-types.service';
 import { RouteStatusesService } from '../route-statuses/route-statuses.service';
 import { CarStatusesService } from '../car-statuses/car-statuses.service';
+import {Car} from "../cars/car.entity";
 
 
 @Injectable()
@@ -23,6 +24,18 @@ export class RoutesService {
         private carStatusesService: CarStatusesService,
     ) {}
 
+    private areDeliveryDatesTheSame(newRoute: Route, oldRoute: Route): boolean {
+        return (
+            new Date(oldRoute.deliveryDate).setHours(0, 0, 0, 0)
+            ===
+            new Date(newRoute.deliveryDate).setHours(0, 0, 0, 0)
+            ||
+            new Date(oldRoute.sendingDate).setHours(0, 0, 0, 0)
+            ===
+            new Date(newRoute.sendingDate).setHours(0, 0, 0, 0)
+        );
+    }
+
     private async addRelations(route: Route): Promise<Route> {
         const transportType = await this.transportTypesService.findById(route.transportTypeId);
         const routeStatus = await  this.routeStatusesService.findById(route.routeStatusId);
@@ -34,46 +47,30 @@ export class RoutesService {
         return route;
     }
 
+    private async setCarStatus(route: Route): Promise<void> {
+        const from = new Date(route.sendingDate).setHours(0, 0, 0, 0);
+        const to = new Date(route.deliveryDate).setHours(0, 0, 0, 0);
+        const now = new Date().setHours(0, 0, 0, 0);
+        const isNowDateBetweenDeliveryDates = now >= from && now <= to;
+        const isNowDateAfterDeliveryDates = now > to;
+        if ((route.routeStatusId === RouteStatusEnum.INPROCESS || route.routeStatusId === RouteStatusEnum.PREPARING) && isNowDateBetweenDeliveryDates) {
+            route.car.carStatusId = CarStatusEnum.BUSY;
+        } else if (route.routeStatusId === RouteStatusEnum.COMPLETED && (isNowDateAfterDeliveryDates || isNowDateBetweenDeliveryDates)) {
+            route.car.carStatusId = CarStatusEnum.FREE;
+        }
+        route.car.carStatus = await this.carStatusesService.findById(route.car.carStatusId);
+    }
+
     private async checkCarAvailability(route: Route): Promise<void> {
-        const newRouteSendingDate = new Date(route.sendingDate);
-        const newRouteDeliveryDate = new Date(route.deliveryDate);
-        const carRoutes = await this.routeRepository.find({
-            where: { carId: route.carId }
-        });
-        carRoutes.forEach((registeredCarRoute) => {
-            const registeredRouteSendingDate = new Date(registeredCarRoute.sendingDate);
-            const registeredRouteDeliveryDate = new Date(registeredCarRoute.deliveryDate);
-            if (
-                !((
-                    newRouteSendingDate < registeredRouteSendingDate
-                    &&
-                    newRouteDeliveryDate < registeredRouteSendingDate
-                ) || (
-                    newRouteSendingDate > registeredRouteDeliveryDate
-                    &&
-                    newRouteDeliveryDate > registeredRouteDeliveryDate
-                )) && registeredCarRoute.id !== route.id
-            ) {
-                throw new BadRequestException('Car don`t available in this days');
+        const routes = await this.routeRepository.find({
+            where: {
+                carId: route.carId,
+                deliveryDate: MoreThanOrEqual(route.deliveryDate),
+                sendingDate: LessThanOrEqual(route.sendingDate)
             }
         });
-    }
-
-    private areDeliveryDatesTheSame(newRoute: Route, oldRoute: Route): boolean {
-        return (
-            new Date(oldRoute.deliveryDate).getTime() === new Date(newRoute.deliveryDate).getTime()
-            ||
-            new Date(oldRoute.sendingDate).getTime() === new Date(newRoute.sendingDate).getTime()
-        );
-    }
-
-    private async setCarStatusIfNowBetweenDeliveryDates(route: Route, status: number): Promise<void> {
-        const from = new Date(route.sendingDate);
-        const to = new Date(route.deliveryDate);
-        const now = new Date();
-        if (now > from && now < to) {
-            route.car.carStatusId = status;
-            route.car.carStatus = await this.carStatusesService.findById(status);
+        if (routes.length > 0) {
+            throw new BadRequestException('Car don`t available in this days');
         }
     }
 
@@ -97,7 +94,7 @@ export class RoutesService {
     async create(route: Route): Promise<Route> {
         await this.addRelations(route);
         await this.checkCarAvailability(route);
-        await this.setCarStatusIfNowBetweenDeliveryDates(route, CarStatusEnum.BUSY);
+        await this.setCarStatus(route);
         return this.routeRepository.save(route);
     }
 
@@ -108,26 +105,25 @@ export class RoutesService {
         if (!this.areDeliveryDatesTheSame(newRoute, oldRoute)) {
             await this.checkCarAvailability(newRoute);
         }
-        await this.setCarStatusIfNowBetweenDeliveryDates(
-            newRoute,
-            newRoute.routeStatusId === RouteStatusEnum.COMPLETED ? CarStatusEnum.FREE : CarStatusEnum.BUSY
-        );
         await getManager().transaction(async (transactionalEntityManager) => {
             if (oldRoute.carId !== newRoute.carId) {
-                await this.setCarStatusIfNowBetweenDeliveryDates(oldRoute, CarStatusEnum.FREE);
+                await this.setCarStatus(oldRoute);
                 await transactionalEntityManager.save(oldRoute.car);
             }
+            await this.setCarStatus(newRoute);
+            await transactionalEntityManager.save(newRoute.car);
             await transactionalEntityManager.save(newRoute);
         });
         return newRoute;
     }
 
-    async delete(id: number): Promise<void> {
+    async delete(id: number): Promise<Route> {
         const route = await this.findRouteById(id);
-        await this.setCarStatusIfNowBetweenDeliveryDates(route, CarStatusEnum.FREE);
+        await this.setCarStatus(route);
         await getManager().transaction(async (transactionalEntityManager) => {
             await transactionalEntityManager.remove(route);
             await transactionalEntityManager.save(route.car);
         });
+        return route;
     }
 }

@@ -32,8 +32,8 @@ export class CarsService {
         });
     }
 
-    async findById(id: number): Promise<Car> {
-        const car = await this.carRepository.findOne(id, {
+    async findById(id: number, options?): Promise<Car> {
+        const car = await this.carRepository.findOne(id, options ? options : {
             relations: ['carStatus', 'transportType']
         });
         if (!car) {
@@ -48,14 +48,16 @@ export class CarsService {
     }
 
     async update(id: number, newCar: Car): Promise<Car> {
-        const car = await this.findById(id);
+        newCar.id = id;
+        await this.findById(id);
         await this.addRelations(newCar);
-        const updatedCar = { ...car, ...newCar };
-        return await this.carRepository.save(updatedCar);
+        return await this.carRepository.save(newCar);
     }
 
     async delete(id: number): Promise<void> {
-        const car = await this.findById(id);
+        const car = await this.findById(id, {
+            relations: ['routes']
+        });
         if (car.routes.length > 0) {
             throw new BadRequestException('Car cannot be deleted while it relate with routes');
         }

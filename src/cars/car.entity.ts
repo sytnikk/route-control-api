@@ -23,7 +23,7 @@ export class Car {
     @Column()
     transportTypeId: number;
 
-    @Column({ type: 'datetime' })
+    @Column({ type: 'date' })
     purchaseDate: Date;
 
     @Column()
@@ -39,7 +39,7 @@ export class Car {
     @Column()
     carStatusId: number;
 
-    constructor(partial: Partial<CarDto>) {
+    constructor(partial: Partial<CarDto|Car>) {
         Object.assign(this, partial);
     }
 }

@@ -19,7 +19,10 @@ export class Route {
     @Column()
     distanceBetweenCities: number;
 
-    @Column({ type: 'datetime' })
+    @Column()
+    revenue: number;
+
+    @Column({ type: 'date' })
     sendingDate: Date;
 
     @OneToOne(type => TransportType)
@@ -43,10 +46,10 @@ export class Route {
     @Column()
     routeStatusId: number;
 
-    @Column({ type: 'datetime' })
+    @Column({ type: 'date' })
     deliveryDate: Date;
 
-    constructor(partial: Partial<RouteDto>) {
+    constructor(partial: Partial<RouteDto|Route>) {
         Object.assign(this, partial);
     }
 }
